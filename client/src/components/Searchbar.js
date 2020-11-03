@@ -1,40 +1,41 @@
 import React, { Component } from "react";
-import {
-  Collapse,
-  Navbar,
-  NavbarToggler,
-  NavbarBrand,
-  Nav,
-  NavItem,
-  NavLink,
-  Container,
-} from "reactstrap";
+import { Container, Button } from "reactstrap";
 import Select from "react-select";
 import makeAnimated from "react-select/animated";
 
 const animatedComponents = makeAnimated();
 
-class SearchBar extends Component {
-  render() {
-    const options = [
-      { value: "cs111", label: "CS 111" },
-      { value: "cs112", label: "CS 112" },
-      { value: "cs113", label: "CS 113" },
-    ];
+const options = [
+  { value: "cs111", label: "CS 111" },
+  { value: "cs112", label: "CS 112" },
+  { value: "cs113", label: "CS 113" },
+];
 
+class SearchBar extends Component {
+  state = {
+    selectedOptions: [],
+  };
+
+  handleChange = (selectedOptions) => {
+    this.setState({ selectedOptions });
+    console.log(selectedOptions);
+  };
+
+  render() {
     return (
       <div>
-        <Container className="searchbar">
+        <Container>
           <Select
             className="select"
             components={animatedComponents}
             placeholder="Select courses..."
             isMulti
             options={options}
+            onChange={this.handleChange}
           />
-          <button color="dark" className="add-button">
+          {/* <Button color="primary" style={{ marginLeft: "1rem" }}>
             Add Courses
-          </button>
+          </Button> */}
         </Container>
       </div>
     );
