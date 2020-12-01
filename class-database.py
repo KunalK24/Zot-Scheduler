@@ -79,13 +79,15 @@ def courseInformation():
                         newCourseInfo['Prerequisite'] = createPrereqList(prereq)
     
                 #Checks for Restrictions on the course
+                '''
                 if re.findall('Restriction', str(description[j])):
                     newCourseInfo['Restrictions'] = description[j].string
                 else:
                     newCourseInfo['Restrictions'] = ""
+                '''
                 #Places data in the database
                 newCourseInfo['Name'] = courseTitle[1].strip()
-                newCourseInfo['Units'] = re.sub(r'[a-zA-Z]', r'', courseTitle[2].replace(' ', ''))
+                newCourseInfo['Units'] = int((re.sub(r'[a-zA-Z]', r'', courseTitle[2].replace(' ', '')))[0])
                 newCourseInfo['Description'] = description[0].text
                 newCourseInfo['Offered'] = []
                 if 'Prerequisite' not in newCourseInfo:
@@ -616,10 +618,8 @@ print('Checking if Offered')
 courseDatabase = checkIfOffered(courseDatabase, coursesOffered)
 print('Handling special cases.')
 courseDatabase = handleSpecialCases(courseDatabase)
-for course in courseDatabase:
-    print(courseDatabase[course]['Prerequisite'])
-'''
 writeDatabase(courseDatabase)
+'''
 print('Creating scored database')
 scoredDatabase = createScoredDatabase(courseDatabase)
 print('Creating priority queue')
