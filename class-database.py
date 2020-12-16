@@ -1,8 +1,14 @@
 import requests
 import re
+import pymongo
+from pymongo import MongoClient
+import config
 from bs4 import BeautifulSoup
 
 classNames = ['COMPSCI', 'STATS', 'IN4MATX', 'I&C\xa0SCI', 'MATH']
+cluster = MongoClient(config.auth)
+db = cluster[config.database_name]
+collection = db[config.collection_name]
 
 '''
     These functions are for gathering data and storing in a database
@@ -73,16 +79,22 @@ def courseInformation():
                         newCourseInfo['Prerequisite'] = createPrereqList(prereq)
     
                 #Checks for Restrictions on the course
+                '''
                 if re.findall('Restriction', str(description[j])):
                     newCourseInfo['Restrictions'] = description[j].string
                 else:
                     newCourseInfo['Restrictions'] = ""
+                '''
                 #Places data in the database
                 newCourseInfo['Name'] = courseTitle[1].strip()
-                newCourseInfo['Units'] = re.sub(r'[a-zA-Z]', r'', courseTitle[2].replace(' ', ''))
+                newCourseInfo['Units'] = int((re.sub(r'[a-zA-Z]', r'', courseTitle[2].replace(' ', '')))[0])
                 newCourseInfo['Description'] = description[0].text
                 newCourseInfo['Offered'] = []
+                if 'Prerequisite' not in newCourseInfo:
+                    newCourseInfo['Prerequisite'] = []
+                newCourseInfo['Number'] = changeCourseName(courseTitle[0])
                 courseDatabase[changeCourseName(courseTitle[0])] = newCourseInfo
+
 
     return courseDatabase
 
@@ -215,6 +227,7 @@ def handleSpecialCases(courseDatabase):
     for i in range(0, len(writingCourses)):
         courseDatabase[writingCourses[i]] = dict()
         #Temp fix for now(Gather Info later from search catalogue)
+        courseDatabase[writingCourses[i]]['Number'] = writingCourses[i]
         courseDatabase[writingCourses[i]]['Name'] = writingCourses[i]
         courseDatabase[writingCourses[i]]['Offered'] = offeredAllQuarters
         courseDatabase[writingCourses[i]]['Units'] = 4
@@ -227,6 +240,7 @@ def handleSpecialCases(courseDatabase):
     for i in range(0, len(mathCourses)):
         #Temp fix for now(Gather Info later from search catalogue)
         courseDatabase[mathCourses[i]] = dict()
+        courseDatabase[mathCourses[i]]['Number'] = mathCourses[i]
         courseDatabase[mathCourses[i]]['Name'] = mathCourses[i]
         courseDatabase[mathCourses[i]]['Offered'] = offeredAllQuarters
         courseDatabase[mathCourses[i]]['Units'] = 4
@@ -359,6 +373,8 @@ def createPrereqList(prereqList):
         
     for elem in listOfCourses:
         elem = changeCourseName(elem)
+        if elem == '':
+            listOfCourses.remove(elem)
 
     return listOfCourses
 
@@ -403,6 +419,11 @@ def checkIfOffered(courseDatabase, coursesOffered):
     These functions will be on the backend of the website.
     TODO: Need to convert all functions to JS.
 '''
+
+def writeDatabase(courseDatabase):
+    collection.delete_many({})
+    for course in courseDatabase:
+        collection.insert_one(courseDatabase[course])
 
 def createScoredDatabase(courseDatabase):
     '''
@@ -591,16 +612,19 @@ def createSchedule(priorityQueue, scoredDatabase):
     
 print('Gathering Info')
 courseDatabase = courseInformation()
-
 print('Gathering Offering')
 coursesOffered = courseOffering()
 print('Checking if Offered')
 courseDatabase = checkIfOffered(courseDatabase, coursesOffered)
 print('Handling special cases.')
 courseDatabase = handleSpecialCases(courseDatabase)
+writeDatabase(courseDatabase)
+'''
 print('Creating scored database')
 scoredDatabase = createScoredDatabase(courseDatabase)
 print('Creating priority queue')
 priorityQueue = createPriorityQueue(scoredDatabase)
 print('FINALLY CREATING THE SCHEDULE')
 createSchedule(priorityQueue, scoredDatabase)
+'''
+
